@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Item - {{item.id}}</title>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+
+<p>{{item.id}}</p>
+<p>{{item.name}}</p>
+<p>{{item.description}}</p>
+<p>{{item.price}}</p>
+
+<p id="stripe-public-key" style="display: none;">{{stripe_public_key}}</p>
+
+<form id="checkout-form">
+    <button type="submit" id="checkout-button"> ---Buy--- </button>
+</form>
+
+<p id="status-message">Статус: </p>
+<p id="response-data">Ответ: </p>
+
+<script>
+    var stripePublicKey = document.getElementById('stripe-public-key').innerText;  // Получение открытого ключа Stripe из HTML-элемента
+    var stripe = Stripe(stripePublicKey);  // Инициализация объекта stripe с использованием полученного открытого ключа
+    var checkoutButton = document.getElementById('checkout-button');  // Получение кнопки "Купить" из HTML-элемента
+    var statusMessage = document.getElementById('status-message');  // Получение элемента для отображения статуса запроса
+    var responseData = document.getElementById('response-data');  // Получение элемента для отображения полученных данных
+
+    checkoutButton.addEventListener('click', function(event) {
+    event.preventDefault();
+
+    statusMessage.innerText = 'Отправка запроса...';
+
+    fetch('/buy/{{item.id}}', {
+      method: 'GET',
+    })
+    .then(function(response) {
+      statusMessage.innerText = 'Запрос выполнен, получение ответа...';
+      return response.json();
+    })
+    .then(function(data) {
+      responseData.innerText = 'Полученный ответ: ' + JSON.stringify(data);
+      return stripe.redirectToCheckout({sessionId: data.session_id});
+    })
+    .then(function(result) {
+      if (result.error) {
+        alert(result.error.message);
+      }
+    })
+    .catch(function(error) {
+      statusMessage.innerText = 'Ошибка: ' + error;
+      console.error('Error:', error);
+    });
+    });
+</script>
+
+</body>
+</html>
