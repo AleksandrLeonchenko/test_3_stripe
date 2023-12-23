@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order - {{order.id}}</title>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+
+<p>{{order.id}}</p>
+<p>{{order.total_price}}</p>
+
+<p id="stripe-public-key" style="display: none;">{{stripe_public_key}}</p>
+
+<form id="checkout-all-form">
+    <button type="submit" id="checkout-all-button"> --Buy All-- </button>
+</form>
+
+<p id="status-message">Status: </p>
+<p id="response-data">Response: </p>
+
+<script>
+    var stripePublicKey = document.getElementById('stripe-public-key').innerText;
+    var stripe = Stripe(stripePublicKey);
+    var checkoutAllButton = document.getElementById('checkout-all-button');
+    var statusMessage = document.getElementById('status-message');
+    var responseData = document.getElementById('response-data');
+
+    checkoutAllButton.addEventListener('click', function(event) {
+    event.preventDefault();
+
+    statusMessage.innerText = 'Sending request...';
+
+    fetch('/buy_all/{{order.id}}', {
+      method: 'GET',
+    })
+    .then(function(response) {
+      statusMessage.innerText = 'Request complete, receiving response...';
+      return response.json();
+    })
+    .then(function(data) {
+      responseData.innerText = 'Received response: ' + JSON.stringify(data);
+      return stripe.redirectToCheckout({sessionId: data.session_id});
+    })
+    .then(function(result) {
+      if (result.error) {
+        alert(result.error.message);
+      }
+    })
+    .catch(function(error) {
+      statusMessage.innerText = 'Error: ' + error;
+      console.error('Error:', error);
+    });
+    });
+</script>
+
+</body>
+</html>

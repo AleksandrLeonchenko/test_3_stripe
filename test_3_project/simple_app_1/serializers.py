@@ -1,14 +1,10 @@
-# from rest_framework import serializers, request, exceptions
-#
-# from .models import Item
-#
-#
-# class ItemSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Item
-#         fields = (
-#             'id',
-#             'name',
-#             'description',
-#             'price',
-#         )
+from rest_framework import serializers
+
+
+class OrderItemSerializer(serializers.Serializer):
+    item_id = serializers.IntegerField()
+    quantity = serializers.IntegerField()
+
+
+class OrderCreateSerializer(serializers.Serializer):
+    items = OrderItemSerializer(many=True)
