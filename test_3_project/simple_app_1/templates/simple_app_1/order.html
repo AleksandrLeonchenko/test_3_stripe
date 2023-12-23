@@ -7,8 +7,10 @@
 </head>
 <body>
 
-<p>{{order.id}}</p>
-<p>{{order.total_price}}</p>
+<p>Номер заказа: {{order.id}}</p>
+<p>Скидка: {{order.discount}}</p>
+<p>Налог: {{order.tax}}</p>
+<p>Общая стоимость: {{order.total_price}}</p>
 
 <p id="stripe-public-key" style="display: none;">{{stripe_public_key}}</p>
 
@@ -29,17 +31,17 @@
     checkoutAllButton.addEventListener('click', function(event) {
     event.preventDefault();
 
-    statusMessage.innerText = 'Sending request...';
+    statusMessage.innerText = 'Отправка запроса...';
 
     fetch('/buy_all/{{order.id}}', {
       method: 'GET',
     })
     .then(function(response) {
-      statusMessage.innerText = 'Request complete, receiving response...';
+      statusMessage.innerText = 'Запрос выполнен, получение ответа...';
       return response.json();
     })
     .then(function(data) {
-      responseData.innerText = 'Received response: ' + JSON.stringify(data);
+      responseData.innerText = 'Полученный ответ: ' + JSON.stringify(data);
       return stripe.redirectToCheckout({sessionId: data.session_id});
     })
     .then(function(result) {
