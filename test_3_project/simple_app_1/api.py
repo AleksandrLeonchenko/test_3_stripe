@@ -29,13 +29,19 @@ class ItemPaymentView(APIView):
             - Response: Объект HTTP-ответа, содержащий session_id для платежной сессии.
         """
         item = get_object_or_404(Item, pk=pk)
+        currency = item.get_currency_display()
+        if currency == 'usd':
+            stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY_CURRENCY_1')
+        else:
+            stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY_CURRENCY_2')
+
         session_creator = PaymentSessionCreator()
         payment_data = {
             'payment_method_types': ['card'],
             'line_items': [
                 {
                     'price_data': {
-                        'currency': 'usd',
+                        'currency': currency,
                         'product_data': {
                             'name': item.name,
                             'description': item.description,
@@ -49,7 +55,7 @@ class ItemPaymentView(APIView):
             'success_url': 'https://xxx.com/success',
             'cancel_url': 'https://yyy.com/cancel',
         }
-        session_id = session_creator.create_session(payment_data)
+        session_id = session_creator.create_session(stripe_secret_key, payment_data)
         return Response({'session_id': session_id})
 
 
@@ -75,7 +81,15 @@ class ItemView(TemplateView):
         """
         context = super().get_context_data(**kwargs)
         pk = self.kwargs.get('pk')
-        context['stripe_public_key'] = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+        item = Item.objects.get(id=pk)
+        currency = item.get_currency_display()
+        if currency == 'usd':
+            stripe_public_key = os.environ.get('STRIPE_PUBLIC_KEY_CURRENCY_1')
+        else:
+            stripe_public_key = os.environ.get('STRIPE_PUBLIC_KEY_CURRENCY_2')
+
+        context['stripe_public_key'] = stripe_public_key
+        # context['stripe_public_key'] = os.environ.get('STRIPE_PUBLISHABLE_KEY')
         context['item'] = Item.objects.get(id=pk)
         return context
 
@@ -139,7 +153,7 @@ class OrderPaymentView(APIView):
             'line_items': [
                 {
                     'price_data': {
-                        'currency': 'usd',
+                        'currency': 'rub',
                         'product_data': {
                             'name': 'Order payment',
                         },
@@ -152,7 +166,8 @@ class OrderPaymentView(APIView):
             'success_url': 'https://zzz.com/success',
             'cancel_url': 'https://sss.com/cancel',
         }
-        session_id = session_creator.create_session(payment_data)
+        stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY')
+        session_id = session_creator.create_session(stripe_secret_key, payment_data)
         return Response({'session_id': session_id})
 
 

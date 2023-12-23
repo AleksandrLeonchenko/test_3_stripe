@@ -11,6 +11,8 @@
 <p>Название товара: {{item.name}}</p>
 <p>Описание товара: {{item.description}}</p>
 <p>Цена товара: {{item.price}}</p>
+<h3>Оплатите в {{item.get_currency_display}}</h3>
+
 
 <p id="stripe-public-key" style="display: none;">{{stripe_public_key}}</p>
 

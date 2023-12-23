@@ -9,12 +9,14 @@ class ItemAdmin(admin.ModelAdmin):
         'name',
         'description',
         'price',
+        'currency',
     ]
     list_display_links = [
         'id',
         'name',
         'description',
         'price',
+        'currency',
     ]
 
 
