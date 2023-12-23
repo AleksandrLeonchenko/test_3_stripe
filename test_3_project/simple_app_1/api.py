@@ -1,13 +1,8 @@
 import os
 import stripe
-# from django.shortcuts import get_object_or_404
-# from django.http import JsonResponse
-# from django.http import HttpResponse
-# from django.http import HttpResponse
 from django.views.generic import TemplateView
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
-# from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import Any, Dict
 
