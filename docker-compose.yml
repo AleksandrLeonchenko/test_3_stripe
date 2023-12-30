@@ -2,9 +2,10 @@ version: '3.9'
 
 services:
   app:
-#    build: -./test_3_project
     build:
-      dockerfile: ./test_3_project/Dockerfile
+      context: ./test_3_project
+      dockerfile: Dockerfile
+#      dockerfile: ./test_3_project/Dockerfile
 #    command: python manage.py runserver 0.0.0.0:8000
 #    command:
 #      - "python"
@@ -18,8 +19,6 @@ services:
       - "0.0.0.0:8000"
     volumes:
       - ./test_3_project:/app
-#    volumes:
-#      - .:/app
     ports:
       - 8000:8000
     restart: always
