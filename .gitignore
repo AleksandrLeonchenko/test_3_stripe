@@ -86,6 +86,10 @@ __pycache__/
 local_settings.py
 
 .env
+.env.dev
+.env.prod
+.env.prod.db
 db.sqlite3
 /test_3_project/.env
 .dockerignore
+.idea/

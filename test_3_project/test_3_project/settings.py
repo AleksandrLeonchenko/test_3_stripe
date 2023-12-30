@@ -11,7 +11,9 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import environ
 import os
+import logging.config
 from pathlib import Path
+from os import getenv
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -24,12 +26,21 @@ env.read_env(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-wr*u!-i(t1@*x^^8)jzsendgd@930_=pw2+=$f2^f_t+pwb#3l"
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+# DEBUG = int(env("DEBUG", default=0))
+# DEBUG = env("DEBUG")
 
-ALLOWED_HOSTS = []
+
+# ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0'
+] + getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
 
 
 # Application definition
@@ -41,8 +52,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+
     'rest_framework',
     'django_filters',
+    'django.contrib.postgres',
 
     "simple_app_1.apps.SimpleApp1Config",
 ]
@@ -94,10 +108,12 @@ DATABASES = {
         'NAME': 'test_3_project',
         'USER': 'postgres',
         'PASSWORD': '55660078aA',
-        'HOST': '127.0.0.1',
+        # 'HOST': '127.0.0.1',
+        'HOST': 'pgdb',
         'PORT': '5432',
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -153,3 +169,17 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+LOGLEVEL = getenv("DJANGO_LOGLEVEL", "info").upper()
+
+logging.config.dictConfig({
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "console": {"format": "%(asctime)s %(levelname)s [%(name)s:%(lineno)s] %(module)s %(message)s", },
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "console", }
+    },
+    "loggers": {"": {"level": LOGLEVEL, "handlers": ["console", ]}}
+})
