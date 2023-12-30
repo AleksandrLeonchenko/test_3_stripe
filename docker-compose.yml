@@ -1,7 +1,7 @@
 version: '3.9'
 
 services:
-  web:
+  app:
 #    build: -./test_3_project
     build:
       dockerfile: ./test_3_project/Dockerfile
@@ -13,11 +13,11 @@ services:
 #      - "0.0.0.0:8000"
     command:
       - gunicorn
-      - wsgi:application
+      - test_3_project.wsgi:application
       - --bind
       - "0.0.0.0:8000"
     volumes:
-      - ./test_3_project:/usr/src/app/
+      - ./test_3_project:/app
 #    volumes:
 #      - .:/app
     ports:
@@ -26,7 +26,7 @@ services:
     depends_on:
       - pgdb
     env_file:
-      - ./.env.dev
+      - ./.env
     logging:
       driver: "json-file"
       options:
