@@ -46,14 +46,6 @@ DEBUG = int(env("DEBUG", default=0))
 
 
 
-# ALLOWED_HOSTS = []
-# ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
-# ALLOWED_HOSTS = [
-#     'localhost',
-#     '127.0.0.1',
-#     '0.0.0.0'
-# ] + getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
-
 DJANGO_ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS")
 
 ALLOWED_HOSTS = [
@@ -111,29 +103,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "test_3_project.wsgi.application"
 
-
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-#         'NAME': 'test_3_project',
-#         'USER': 'postgres',
-#         'PASSWORD': '55660078aA',
-#         'HOST': '127.0.0.1',
-#         # 'HOST': 'pgdb',
-#         'PORT': '5432',
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -145,9 +114,6 @@ DATABASES = {
     }
 }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -197,17 +163,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGLEVEL = getenv("DJANGO_LOGLEVEL", "info").upper()
 
-# logging.config.dictConfig({
-#     "version": 1,
-#     "disable_existing_loggers": False,
-#     "formatters": {
-#         "console": {"format": "%(asctime)s %(levelname)s [%(name)s:%(lineno)s] %(module)s %(message)s", },
-#     },
-#     "handlers": {
-#         "console": {"class": "logging.StreamHandler", "formatter": "console", }
-#     },
-#     "loggers": {"": {"level": LOGLEVEL, "handlers": ["console", ]}}
-# })
 
 LOGGING = {
     'version': 1,
