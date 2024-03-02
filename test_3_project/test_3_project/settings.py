@@ -28,19 +28,39 @@ env.read_env(BASE_DIR / '.env')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY')
 
+STRIPE_PUBLISHABLE_KEY = env('STRIPE_PUBLISHABLE_KEY')
+STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY')
+STRIPE_API_VERSION = env('STRIPE_API_VERSION')
+
+# Для валюты 1 - usd
+STRIPE_PUBLIC_KEY_CURRENCY_1 = env('STRIPE_PUBLIC_KEY_CURRENCY_1')
+STRIPE_SECRET_KEY_CURRENCY_1 = env('STRIPE_SECRET_KEY_CURRENCY_1')
+
+# Для валюты 2 - rub
+STRIPE_PUBLIC_KEY_CURRENCY_2 = env('STRIPE_PUBLIC_KEY_CURRENCY_2')
+STRIPE_SECRET_KEY_CURRENCY_2 = env('STRIPE_SECRET_KEY_CURRENCY_2')
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-# DEBUG = int(env("DEBUG", default=0))
-# DEBUG = env("DEBUG")
+# DEBUG = True
+DEBUG = int(env("DEBUG", default=0))
+
 
 
 # ALLOWED_HOSTS = []
 # ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
+# ALLOWED_HOSTS = [
+#     'localhost',
+#     '127.0.0.1',
+#     '0.0.0.0'
+# ] + getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+
+DJANGO_ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS")
+
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '0.0.0.0'
-] + getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+] + DJANGO_ALLOWED_HOSTS.split(",")
 
 
 # Application definition
@@ -102,14 +122,25 @@ WSGI_APPLICATION = "test_3_project.wsgi.application"
 #     }
 # }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': 'test_3_project',
+#         'USER': 'postgres',
+#         'PASSWORD': '55660078aA',
+#         'HOST': '127.0.0.1',
+#         # 'HOST': 'pgdb',
+#         'PORT': '5432',
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'test_3_project',
-        'USER': 'postgres',
-        'PASSWORD': '55660078aA',
-        'HOST': '127.0.0.1',
-        # 'HOST': 'pgdb',
+        'NAME': env('POSTGRES_NAME'),
+        'USER': env('POSTGRES_USER'),
+        'PASSWORD': env('POSTGRES_PASS'),
+        'HOST': 'pgdb' if os.environ.get('DOCKER_ENV') == 'docker' else '127.0.0.1',
         'PORT': '5432',
     }
 }
@@ -134,17 +165,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-STRIPE_PUBLISHABLE_KEY = env('STRIPE_PUBLISHABLE_KEY')
-STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY')
-STRIPE_API_VERSION = env('STRIPE_API_VERSION')
-
-# Для валюты 1 - usd
-STRIPE_PUBLIC_KEY_CURRENCY_1 = env('STRIPE_PUBLIC_KEY_CURRENCY_1')
-STRIPE_SECRET_KEY_CURRENCY_1 = env('STRIPE_SECRET_KEY_CURRENCY_1')
-
-# Для валюты 2 - rub
-STRIPE_PUBLIC_KEY_CURRENCY_2 = env('STRIPE_PUBLIC_KEY_CURRENCY_2')
-STRIPE_SECRET_KEY_CURRENCY_2 = env('STRIPE_SECRET_KEY_CURRENCY_2')
 
 
 # Internationalization
@@ -163,7 +183,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'simple_app_1', 'static')]
+
+MEDIA_URL = 'media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -172,14 +197,35 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGLEVEL = getenv("DJANGO_LOGLEVEL", "info").upper()
 
-logging.config.dictConfig({
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "console": {"format": "%(asctime)s %(levelname)s [%(name)s:%(lineno)s] %(module)s %(message)s", },
+# logging.config.dictConfig({
+#     "version": 1,
+#     "disable_existing_loggers": False,
+#     "formatters": {
+#         "console": {"format": "%(asctime)s %(levelname)s [%(name)s:%(lineno)s] %(module)s %(message)s", },
+#     },
+#     "handlers": {
+#         "console": {"class": "logging.StreamHandler", "formatter": "console", }
+#     },
+#     "loggers": {"": {"level": LOGLEVEL, "handlers": ["console", ]}}
+# })
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'django.log',
+        },
     },
-    "handlers": {
-        "console": {"class": "logging.StreamHandler", "formatter": "console", }
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
     },
-    "loggers": {"": {"level": LOGLEVEL, "handlers": ["console", ]}}
-})
+}
+
+

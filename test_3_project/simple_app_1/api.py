@@ -1,22 +1,42 @@
-import os
-import stripe
+from typing import Any, Dict
+from django.http import JsonResponse, HttpResponse, Http404
 from django.views.generic import TemplateView
 from rest_framework import status
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
-from typing import Any, Dict
 
+import stripe
+import logging
 from .models import Item, Order, OrderItem
 from .serializers import OrderCreateSerializer
-from .service import PaymentSessionCreator
+from .service import PaymentSessionCreator, OrderCreationService, ItemPaymentDataService, OrderPaymentDataService
+from test_3_project.settings import (
+    STRIPE_PUBLISHABLE_KEY, STRIPE_PUBLIC_KEY_CURRENCY_1, STRIPE_PUBLIC_KEY_CURRENCY_2, STRIPE_SECRET_KEY
+)
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler('app.log')
+file_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 
 class ItemPaymentView(APIView):
     """
-    Представление для GET-запроса для создания платежной сессии.
+    Представление для обработки GET-запроса и создания платежной сессии.
+
+    Attributes:
+        - None
+
+    Methods:
+        - get(request, pk: int) -> Response: Обрабатывает GET-запрос для создания платежной сессии.
 
     """
+
     def get(self, request, pk: int) -> Response:
         """
         Обрабатывает GET-запрос для создания платежной сессии.
@@ -29,34 +49,72 @@ class ItemPaymentView(APIView):
             - Response: Объект HTTP-ответа, содержащий session_id для платежной сессии.
         """
         item = get_object_or_404(Item, pk=pk)
-        currency = item.get_currency_display()
-        if currency == 'usd':
-            stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY_CURRENCY_1')
-        else:
-            stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY_CURRENCY_2')
 
-        session_creator = PaymentSessionCreator()
-        payment_data = {
-            'payment_method_types': ['card'],
-            'line_items': [
-                {
-                    'price_data': {
-                        'currency': currency,
-                        'product_data': {
-                            'name': item.name,
-                            'description': item.description,
-                        },
-                        'unit_amount': int(item.price * 100),
-                    },
-                    'quantity': 1,
-                }
-            ],
-            'mode': 'payment',
-            'success_url': 'https://xxx.com/success',
-            'cancel_url': 'https://yyy.com/cancel',
-        }
-        session_id = session_creator.create_session(stripe_secret_key, payment_data)
+        try:
+            currency = item.get_currency_display()
+            payment_data, stripe_secret_key = ItemPaymentDataService.generate_payment_data(request, item, currency)
+            session_id = PaymentSessionCreator.create_session(stripe_secret_key, payment_data)
+        except Exception as e:
+            logger.error(f"ItemPaymentView - An error occurred: {str(e)}")
+            return Response({'error': str(e)}, status=500)
+
         return Response({'session_id': session_id})
+
+
+class SuccessView(TemplateView):
+    """
+    Страница успеха.
+
+    Attributes:
+        - template_name (str): Имя шаблона, используемого для отображения страницы успеха.
+
+    Methods:
+        - get_context_data(**kwargs: Any) -> Dict[str, Any]: Получение контекста данных для отображения страницы успеха.
+
+    """
+    template_name = "simple_app_1/success.html"
+
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        """
+        Получение контекста данных для отображения страницы успеха.
+
+        Parameters:
+            - kwargs: Дополнительные аргументы.
+
+        Returns:
+            - Dict[str, Any]: Словарь с контекстом данных для использования в шаблоне.
+
+        """
+        context = super().get_context_data(**kwargs)
+        return context
+
+
+class CancelView(TemplateView):
+    """
+    Страница отмены.
+
+    Attributes:
+        - template_name (str): Имя шаблона, используемого для отображения страницы неудачи.
+
+    Methods:
+        - get_context_data(**kwargs: Any) -> Dict[str, Any]: Получение контекста данных для отображения страницы неудачи.
+
+    """
+    template_name = "simple_app_1/cancel.html"
+
+    def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
+        """
+        Получение контекста данных для отображения страницы отмены.
+
+        Parameters:
+            - kwargs: Дополнительные аргументы.
+
+        Returns:
+            - Dict[str, Any]: Словарь с контекстом данных для использования в шаблоне.
+
+        """
+        context = super().get_context_data(**kwargs)
+        return context
 
 
 class ItemView(TemplateView):
@@ -83,22 +141,33 @@ class ItemView(TemplateView):
         pk = self.kwargs.get('pk')
         item = Item.objects.get(id=pk)
         currency = item.get_currency_display()
+
         if currency == 'usd':
-            stripe_public_key = os.environ.get('STRIPE_PUBLIC_KEY_CURRENCY_1')
+            stripe_public_key = STRIPE_PUBLIC_KEY_CURRENCY_1
         else:
-            stripe_public_key = os.environ.get('STRIPE_PUBLIC_KEY_CURRENCY_2')
+            stripe_public_key = STRIPE_PUBLIC_KEY_CURRENCY_2
 
         context['stripe_public_key'] = stripe_public_key
-        # context['stripe_public_key'] = os.environ.get('STRIPE_PUBLISHABLE_KEY')
         context['item'] = Item.objects.get(id=pk)
         return context
 
 
 class OrderCreateView(APIView):
     """
-    Представление для POST-запроса для создания заказа.
+    Класс API-представления для создания заказа.
 
+    Принимает POST-запрос с данными в формате:
+    {
+      "items": [
+        {"item_id": 1, "quantity": 2},
+        {"item_id": 3, "quantity": 1},
+        {"item_id": 5, "item": 3}
+      ]
+    }
+
+    Возвращает JSON с информацией о созданном заказе или ошибкой валидации.
     """
+
     def post(self, request) -> Response:
         """
         Обрабатывает POST-запрос для создания заказа.
@@ -113,28 +182,25 @@ class OrderCreateView(APIView):
 
         if serializer.is_valid():
             order_items_data = serializer.validated_data['items']
-
-            order = Order.objects.create()
-            for item_data in order_items_data:
-                item = Item.objects.get(id=item_data['item_id'])
-                quantity = item_data['quantity']
-                order_item = OrderItem.objects.create(order=order, item=item,
-                                                      quantity=quantity)  # Создание заказанного товара и добавление к заказу
-                order.items.add(item)  # Добавление товара к заказу
-
-            print('----order.id----', order.id)
-            print('---total_price-----', order.total_price)
-
-            return Response({'order_id': order.id}, status=status.HTTP_201_CREATED)
+            order_id = OrderCreationService.create_order(order_items_data)
+            return Response({'order_id': order_id}, status=status.HTTP_201_CREATED)
         else:
+            logger.error(f"OrderCreateView - Validation error: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class OrderPaymentView(APIView):
     """
-    Представление для GET-запроса для оплаты заказа.
+    Класс API-представления для обработки GET-запроса оплаты заказа.
+
+    Attributes:
+        - None
+
+    Methods:
+        - get(request, order_id: int) -> Response: Обрабатывает GET-запрос для создания платежной сессии заказа.
 
     """
+
     def get(self, request, order_id: int) -> Response:
         """
         Обрабатывает GET-запрос для оплаты заказа.
@@ -147,27 +213,13 @@ class OrderPaymentView(APIView):
             - Response: Объект HTTP-ответа, содержащий session_id для платежной сессии.
         """
         order = get_object_or_404(Order, pk=order_id)
-        session_creator = PaymentSessionCreator()
-        payment_data = {
-            'payment_method_types': ['card'],
-            'line_items': [
-                {
-                    'price_data': {
-                        'currency': 'rub',
-                        'product_data': {
-                            'name': 'Order payment',
-                        },
-                        'unit_amount': int(order.total_price * 100),
-                    },
-                    'quantity': 1,
-                }
-            ],
-            'mode': 'payment',
-            'success_url': 'https://zzz.com/success',
-            'cancel_url': 'https://sss.com/cancel',
-        }
-        stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY')
-        session_id = session_creator.create_session(stripe_secret_key, payment_data)
+
+        try:
+            payment_data = OrderPaymentDataService.generate_payment_data(request, order)
+            session_id = PaymentSessionCreator.create_session(STRIPE_SECRET_KEY, payment_data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+
         return Response({'session_id': session_id})
 
 
@@ -193,6 +245,6 @@ class OrderView(TemplateView):
         """
         context = super().get_context_data(**kwargs)
         order_id = self.kwargs.get('order_id')
-        context['stripe_public_key'] = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+        context['stripe_public_key'] = STRIPE_PUBLISHABLE_KEY
         context['order'] = Order.objects.get(id=order_id)
         return context

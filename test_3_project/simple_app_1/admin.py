@@ -10,6 +10,7 @@ class ItemAdmin(admin.ModelAdmin):
         'description',
         'price',
         'currency',
+        # 'image',
     ]
     list_display_links = [
         'id',
@@ -17,6 +18,7 @@ class ItemAdmin(admin.ModelAdmin):
         'description',
         'price',
         'currency',
+        # 'image',
     ]
 
 
@@ -39,12 +41,16 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = [
         'id',
         'user',
+        'address',
+        'telephone',
         'discount',
         'tax',
     ]
     list_display_links = [
         'id',
         'user',
+        'address',
+        'telephone',
         'discount',
         'tax',
     ]

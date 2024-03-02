@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h3 {
+            color: #333;
+        }
+
+        p {
+            margin-bottom: 10px;
+        }
+
+        #checkout-form {
+            margin-top: 20px;
+        }
+
+        #checkout-button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #status-message {
+            margin-top: 10px;
+            color: #333;
+        }
+
+        #response-data {
+            margin-top: 10px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+{% block content %}{% endblock %}
+
+<script>
+    var stripePublicKey = document.getElementById('stripe-public-key').innerText;
+    var stripe = Stripe(stripePublicKey);
+    var checkoutButton = document.getElementById('checkout-button');
+    var statusMessage = document.getElementById('status-message');
+    var responseData = document.getElementById('response-data');
+
+    checkoutButton.addEventListener('click', function(event) {
+        event.preventDefault();
+
+        statusMessage.innerText = 'Отправка запроса...';
+
+        fetch('{% block checkout_url %}{% endblock %}', {
+            method: 'GET',
+        })
+        .then(function(response) {
+            statusMessage.innerText = 'Запрос выполнен, получение ответа...';
+            return response.json();
+        })
+        .then(function(data) {
+            responseData.innerText = 'Полученный ответ: ' + JSON.stringify(data);
+            return stripe.redirectToCheckout({sessionId: data.session_id});
+        })
+        .then(function(result) {
+            if (result.error) {
+                alert(result.error.message);
+            }
+        })
+        .catch(function(error) {
+            statusMessage.innerText = 'Ошибка: ' + error;
+            console.error('Error:', error);
+        });
+    });
+</script>
+
+</body>
+</html>

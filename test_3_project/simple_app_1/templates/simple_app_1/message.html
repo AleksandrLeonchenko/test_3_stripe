@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Message</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .message-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .success {
+            color: #28a745;
+        }
+
+        .error {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+
+<div class="message-container">
+    {% block content %}
+        {% if success %}
+            <h1 class="success">Success!</h1>
+        {% else %}
+            <h1 class="error">Error!</h1>
+        {% endif %}
+
+        <p>{{ message }}</p>
+
+        <p>Thank you for using our service.</p>
+    {% endblock %}
+</div>
+
+</body>
+</html>

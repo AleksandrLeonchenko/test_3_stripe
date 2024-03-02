@@ -25,6 +25,10 @@ class Item(models.Model):
         default=1,
         verbose_name="Валюта"
     )
+    stripe_price_id = models.CharField(
+        max_length=100,
+        default="None",
+    )
 
     class Meta:
         verbose_name = 'Товар'
@@ -34,10 +38,11 @@ class Item(models.Model):
     def get_currency_display(self):
         return dict(Item.CURRENCY_CHOICES)[self.currency]
 
+    def get_formatted_price(self):
+        return f"{self.price:.2f} {self.get_currency_display()}"
+
     def __str__(self):
         return self.name
-
-
 
 
 class Discount(models.Model):
@@ -45,7 +50,14 @@ class Discount(models.Model):
     Модель скидки на товар
     """
     name = models.CharField(max_length=100)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(100)
+        ]
+    )
 
     class Meta:
         verbose_name = 'Скидка'
@@ -53,7 +65,7 @@ class Discount(models.Model):
         ordering = ['pk']
 
     def __str__(self):
-        return f"{self.amount}"
+        return f"{self.amount}%"
 
 
 class Tax(models.Model):
@@ -84,19 +96,27 @@ class Order(models.Model):
     Модель заказа
     """
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=1)
-    items = models.ManyToManyField(
-        Item,
-        related_name='orders'
+    address = models.CharField(
+        max_length=300,
+        null=True,
+        blank=True
+    )
+    telephone = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True
     )
     discount = models.ForeignKey(
         Discount,
         on_delete=models.SET_NULL,
-        null=True, blank=True
+        null=True,
+        blank=True
     )
     tax = models.ForeignKey(
         Tax,
         on_delete=models.SET_NULL,
-        null=True, blank=True
+        null=True,
+        blank=True
     )
 
     class Meta:
@@ -126,11 +146,12 @@ class OrderItem(models.Model):
     order = models.ForeignKey(
         Order,
         related_name='order_item',
+        on_delete=models.CASCADE,
+    )
+    item = models.ForeignKey(
+        Item,
         on_delete=models.CASCADE
     )
-    item = models.ForeignKey(Item,
-                             on_delete=models.CASCADE
-                             )
     quantity = models.PositiveIntegerField(
         default=1
     )

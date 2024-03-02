@@ -5,8 +5,6 @@ services:
     build:
       context: ./test_3_project
       dockerfile: Dockerfile
-#      dockerfile: ./test_3_project/Dockerfile
-#    command: python manage.py runserver 0.0.0.0:8000
 #    command:
 #      - "python"
 #      - "manage.py"
@@ -32,22 +30,16 @@ services:
         max-file: "10"
         max-size: "200k"
 
+
   pgdb:
-    # Использование готового образа postgres
     image: postgres
-    # Задание переменных окружения для контейнера с postgres
     ports:
       - 5432:5432
-    environment:
-      - POSTGRES_DB=test_3_project
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=55660078aA
-      # Задание имени контейнера для сервиса pgdb
+    env_file:
+      - ./.env
     container_name: pgdb
-    # Связывание тома с директорией в контейнере для сохранения данных postgres
     volumes:
       - pgdbdata:/var/lib/postgresql/data/
-
 
 volumes:
   pgdbdata:
